@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    // Базовые настройки
+    "target": "ES2020", // Современный JavaScript
+    "lib": ["ES2020", "DOM", "DOM.Iterable"], // Доступные API
+    "module": "ESNext", // ES модули (import/export)
+    "moduleResolution": "bundler", // Как разрешать импорты
+
+    // React настройки
+    "jsx": "react-jsx", // Поддержка JSX для React
+
+    // СТРОГИЕ ПРОВЕРКИ (заставят указывать типы)
+    "strict": true, // Включает все строгие проверки
+    "noImplicitAny": true, // Запрещает неявный any
+    "noImplicitReturns": true, // Проверяет return в функциях
+    "noUnusedLocals": true, // Ошибка на неиспользуемые переменные
+    "noUnusedParameters": true, // Ошибка на неиспользуемые параметры
+    "noFallthroughCasesInSwitch": true, // Проверяет break в switch
+
+    // Дополнительные строгие проверки
+    "exactOptionalPropertyTypes": true, // Строгая проверка опциональных свойств
+    "noImplicitOverride": true, // Требует override для переопределения
+
+    // Дополнительные возможности
+    "allowSyntheticDefaultImports": true, // Упрощенные импорты
+    "esModuleInterop": true, // Совместимость модулей
+    "resolveJsonModule": true, // Импорт JSON файлов
+    "skipLibCheck": true, // Пропускать проверку библиотек
+
+    // Import alias для shadcn/ui
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    // Вывод
+    "noEmit": true, // Не создавать .js файлы (Vite сам соберет)
+    "isolatedModules": true // Безопасность для сборщиков
+  },
+
+  // Что включать в компиляцию
+  "include": ["src"],
+
+  // Что исключать
+  "exclude": ["node_modules", "dist"]
+}
