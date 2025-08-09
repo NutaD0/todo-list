@@ -13,6 +13,7 @@ export default function App() {
   const [currentFilter, setCurrentFilter] = useAtom(filterAtom);
   const [folders, setFolders] = useAtom(foldersAtom);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
 
   const addTodo = (todoData: {
     text: string;
@@ -90,6 +91,24 @@ export default function App() {
     );
     setEditingId(null);
   };
+
+  const updateFolder = (id: string, newTitle: string) => {
+    setFolders(
+      folders.map((folder) =>
+        folder.id === id ? { ...folder, title: newTitle } : folder
+      )
+    );
+    setEditingFolderId(null);
+  };
+
+  const toggleFolderPin = (id: string) => {
+    setFolders(
+      folders.map((folder) =>
+        folder.id === id ? { ...folder, pinned: !folder.pinned } : folder
+      )
+    );
+  };
+
   const toggleTodo = (id: number) => {
     setTodos(
       todos.map((todo) =>
@@ -142,6 +161,10 @@ export default function App() {
           folders={folders}
           onDeleteFolder={deleteFolder}
           onDeleteNoFolder={deleteNoFolder}
+          onUpdateFolder={updateFolder}
+          onToggleFolderPin={toggleFolderPin}
+          editingFolderId={editingFolderId}
+          setEditingFolderId={setEditingFolderId}
         />
       </div>
     </div>

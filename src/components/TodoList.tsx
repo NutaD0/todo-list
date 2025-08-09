@@ -15,13 +15,25 @@ export default function TodoList({
   folders,
   onDeleteFolder,
   onDeleteNoFolder,
+  onUpdateFolder,
+  onToggleFolderPin,
+  editingFolderId,
+  setEditingFolderId,
 }: TodoListProps) {
   const [editingText, setEditingText] = useState<string>("");
+  const [editingFolderText, setEditingFolderText] = useState<string>("");
 
   const groupedTodos = useMemo(() => {
     const groups: { folder?: TodoFolder; todos: Todo[] }[] = [];
 
-    folders.forEach((folder) => {
+    // Сортируем папки: сначала закрепленные, потом обычные
+    const sortedFolders = [...folders].sort((a, b) => {
+      const pinnedA = a.pinned ? 1 : 0;
+      const pinnedB = b.pinned ? 1 : 0;
+      return pinnedB - pinnedA;
+    });
+
+    sortedFolders.forEach((folder) => {
       const folderTodos = todos.filter((todo) => todo.folderId === folder.id);
 
       groups.push({ folder, todos: folderTodos });
@@ -45,24 +57,95 @@ export default function TodoList({
   }
 
   if (todos.length === 0 && folders.length > 0) {
+    // Сортируем папки: сначала закрепленные, потом обычные
+    const sortedFolders = [...folders].sort((a, b) => {
+      const pinnedA = a.pinned ? 1 : 0;
+      const pinnedB = b.pinned ? 1 : 0;
+      return pinnedB - pinnedA;
+    });
+
     return (
       <div className="space-y-2">
         <div>
-          {folders.map((folder) => (
+          {sortedFolders.map((folder) => (
             <div
-              className="flex justify-between items-center p-4 border border-gray-200 rounded-lg bg-white gap-3"
+              className="flex justify-between items-center p-4 border mb-2 border-gray-200 rounded-lg bg-white gap-3"
               key={folder.id}
             >
               <div className="flex flex-1 gap-3 items-center">
                 <Folder className="w-6 h-6" />
-                {folder.title}
+                {editingFolderId === folder.id ? (
+                  <input
+                    type="text"
+                    value={editingFolderText}
+                    className="p-2 max-h-8 w-full border border-white bg-gray-100 rounded-md transition-all duration-200 focus:border-neutral-400 focus:outline-none focus:shadow-[0_0_0_4px_rgba(105,105,105,0.2)]"
+                    onChange={(e) => setEditingFolderText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveEditingFolder();
+                      if (e.key === "Escape") cancelEditingFolder();
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={`flex items-center gap-3 duration-200 break-all ${
+                      !folder.pinned
+                        ? "text-black"
+                        : "line-through text-gray-500"
+                    }`}
+                  >
+                    {folder.title}
+                  </span>
+                )}
               </div>
-              <button
-                className="p-2 text-center rounded-lg hover:bg-neutral-200"
-                onClick={() => onDeleteFolder(folder.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex gap-1">
+                {editingFolderId === folder.id ? (
+                  <>
+                    <button
+                      className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                      onClick={saveEditingFolder}
+                    >
+                      <Save className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                      onClick={cancelEditingFolder}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="p-2 text-center rounded-lg hover:bg-neutral-200 duration-200"
+                      onClick={() => startEditingFolder(folder)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                      onClick={() => onDeleteFolder(folder.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    {folder.pinned === true ? (
+                      <button
+                        className="p-2 text-black duration-200 hover:bg-neutral-200 text-center rounded-lg"
+                        onClick={() => onToggleFolderPin(folder.id)}
+                      >
+                        <PinOff className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        className="p-2 text-center rounded-lg duration-200 text-gray-400 hover:bg-neutral-200 hover:text-black"
+                        onClick={() => onToggleFolderPin(folder.id)}
+                      >
+                        <Pin className="w-4 h-4" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -88,6 +171,23 @@ export default function TodoList({
     setEditingText("");
   };
 
+  const startEditingFolder = (folder: TodoFolder) => {
+    setEditingFolderId(folder.id);
+    setEditingFolderText(folder.title);
+  };
+
+  const saveEditingFolder = () => {
+    if (editingFolderId && editingFolderText.trim()) {
+      onUpdateFolder(editingFolderId, editingFolderText.trim());
+      setEditingFolderId(null);
+      setEditingFolderText("");
+    }
+  };
+  const cancelEditingFolder = () => {
+    setEditingFolderId(null);
+    setEditingFolderText("");
+  };
+
   return (
     <div className="space-y-2">
       <div>
@@ -98,15 +198,91 @@ export default function TodoList({
                 {group.folder && (
                   <>
                     <div className="flex flex-1 gap-3 items-center">
-                      <Folder className="w-6 h-6" />
-                      {group.folder.title}
+                      <Folder
+                        className={`w-6 h-6 duration-200 ${
+                          group.folder.pinned ? "text-blue-400" : "text-black"
+                        }`}
+                      />
+                      {editingFolderId === group.folder.id ? (
+                        <input
+                          type="text"
+                          value={editingFolderText}
+                          className="p-2 max-h-8 w-full border border-white bg-gray-100 rounded-md transition-all duration-200 focus:border-neutral-400 focus:outline-none focus:shadow-[0_0_0_4px_rgba(105,105,105,0.2)]"
+                          onChange={(e) => setEditingFolderText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEditingFolder();
+                            if (e.key === "Escape") cancelEditingFolder();
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span className="flex items-center gap-3 duration-200 break-all">
+                            {group.folder.title}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({group.todos.length})
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <button
-                      className="p-2 text-center rounded-lg hover:bg-neutral-200"
-                      onClick={() => onDeleteFolder(group.folder!.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-1">
+                      {editingFolderId === group.folder.id ? (
+                        <>
+                          <button
+                            className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                            onClick={saveEditingFolder}
+                          >
+                            <Save className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                            onClick={cancelEditingFolder}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="p-2 text-center rounded-lg hover:bg-neutral-200 duration-200"
+                            onClick={() => {
+                              if (group.folder) {
+                                startEditingFolder(group.folder);
+                              }
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                            onClick={() => onDeleteFolder(group.folder!.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+
+                          {group.folder.pinned === true ? (
+                            <button
+                              className="p-2 text-black duration-200 hover:bg-neutral-200 text-center rounded-lg"
+                              onClick={() =>
+                                onToggleFolderPin(group.folder!.id)
+                              }
+                            >
+                              <PinOff className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              className="p-2 text-center rounded-lg duration-200 text-gray-400 hover:bg-neutral-200 hover:text-black"
+                              onClick={() =>
+                                onToggleFolderPin(group.folder!.id)
+                              }
+                            >
+                              <Pin className="w-4 h-4" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </>
                 )}
                 {!group.folder && (
@@ -115,12 +291,14 @@ export default function TodoList({
                       <Folder className="w-6 h-6" />
                       <span className="text-gray-500">No folder</span>
                     </div>
-                    <button
-                      className="p-2 text-center rounded-lg hover:bg-neutral-200"
-                      onClick={() => onDeleteNoFolder()}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        className="p-2 text-center rounded-lg hover:bg-neutral-200"
+                        onClick={onDeleteNoFolder}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
@@ -151,7 +329,7 @@ export default function TodoList({
                         />
                       ) : (
                         <span
-                          className={`flex items-center gap-3 duration-200 ${
+                          className={`flex items-center gap-3 duration-200 break-all ${
                             !todo.completed
                               ? "text-black"
                               : "line-through text-gray-500"

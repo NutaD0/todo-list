@@ -27,6 +27,10 @@ export interface TodoListProps {
   todos: Todo[];
   onDeleteTodo: (id: number) => void;
   onUpdateTodo: (id: number, newText: string) => void;
+  onUpdateFolder: (id: string, newTitle: string) => void;
+  onToggleFolderPin: (id: string) => void;
+  editingFolderId: string | null;
+  setEditingFolderId: (id: string | null) => void;
   editingId: number | null;
   setEditingId: (id: number | null) => void;
   onToggleTodo: (id: number) => void;
