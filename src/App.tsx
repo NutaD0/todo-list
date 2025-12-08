@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TodoForm from "./components/TodoForm";
 import { CheckSquare } from "lucide-react";
 import "./App.css";
@@ -7,6 +7,7 @@ import { Todo, FilterType, TodoFolder } from "./types";
 import TodoFilter from "./components/TodoFilter";
 import { useAtom } from "jotai";
 import { todosAtom, filterAtom, foldersAtom } from "./state/atom";
+import CookiesPanel from "./components/CookiesPanel";
 
 export default function App() {
   const [todos, setTodos] = useAtom(todosAtom);
@@ -14,6 +15,28 @@ export default function App() {
   const [folders, setFolders] = useAtom(foldersAtom);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [showCookiesPanel, setShowCookiesPanel] = useState<boolean>(false);
+
+  useEffect(() => {
+    const cookieChoice = localStorage.getItem("cookieConsent");
+    if (!cookieChoice) {
+      const timer = setTimeout(() => {
+        setShowCookiesPanel(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, []);
+
+  const handleAcceptCookies = () => {
+    localStorage.setItem("cookieConsent", "accepted");
+    setShowCookiesPanel(false);
+  };
+
+  const handleRejectCookies = () => {
+    localStorage.setItem("cookieConsent", "rejected");
+    setShowCookiesPanel(false);
+  };
 
   const addTodo = (todoData: {
     text: string;
@@ -124,7 +147,7 @@ export default function App() {
     );
   };
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gray-100 p-4 pb-24">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="p-4 border border-gray-300 rounded-lg bg-white text-center mb-6">
@@ -167,6 +190,11 @@ export default function App() {
           setEditingFolderId={setEditingFolderId}
         />
       </div>
+      <CookiesPanel
+        isVisible={showCookiesPanel}
+        onAccept={handleAcceptCookies}
+        onReject={handleRejectCookies}
+      />
     </div>
   );
 }
